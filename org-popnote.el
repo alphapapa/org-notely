@@ -62,13 +62,13 @@
   "Outline path where new notes are created."
   :type '(repeat string))
 
-(defcustom org-popnote-timestamp-format "[%Y-%m-%d %a %H:%M:%S]"
-  "Timestamp format string used for new headings.
-Org does not include the second in timestamps, but it's important
-that it be included here, because it's used to disambiguate notes
-created within a short period of time.  (One-second resolution is
-generally good enough.)"
-  :type 'string)
+(defcustom org-popnote-new-note-hook
+  '(org-popnote-rebind-ret org-popnote-new-note-timestamp)
+  "Hook called when new note is created.
+Called with point on the new heading.  Each hook function should
+return with point in the same place, unless its purpose is to
+move point."
+  :type 'hook)
 
 ;;;; Commands
 
@@ -87,19 +87,25 @@ point is on a heading."
   ;; NOTE: We do not use `with-current-buffer' around the whole function.  Trust me.
   (switch-to-buffer (or (get-file-buffer org-popnote-file)
 			(find-file-noselect org-popnote-file)))
-  (pcase-let* ((parent-marker (org-find-olp org-popnote-outline-path 'this-buffer))
-               (timestamp (org-popnote-timestamp))
-               (`(,_ ,_file ,_ ,pos)
-                (org-refile-new-child (list nil org-popnote-file nil parent-marker) timestamp))
-	       (indirect-buffer (org-with-point-at pos
-				  (org-popnote-tree-indirect-buffer))))
-    (switch-to-buffer indirect-buffer)
-    (end-of-line)
-    (insert " ")
-    (org-popnote-rebind-ret)
+  (pcase-let* ((parent-marker (org-find-olp org-popnote-outline-path 'this-buffer)))
+    (goto-char parent-marker)
+    (org-insert-heading-respect-content)
+    ;; TODO: Ensure the region is deactivated before demotion.
+    (org-do-demote)
+    (switch-to-buffer (org-popnote-tree-indirect-buffer))
+    (run-hooks 'org-popnote-new-note-hook)
     (current-buffer)))
 
 ;;;; Functions
+
+(defun org-popnote-new-note-timestamp ()
+  "Insert timestamp and leave point in heading.
+For `org-popnote-new-note-hook'."
+  (end-of-line)
+  (save-excursion
+    (insert "\n\n")
+    (org-insert-time-stamp (current-time) 'with-hm 'inactive)
+    (insert "  ")))
 
 (defun org-popnote-tree-indirect-buffer ()
   "Return an indirect buffer narrowed to current subtree.
@@ -114,30 +120,32 @@ Like `org-tree-to-indirect-buffer', but does what we need."
       (org-narrow-to-subtree)
       (current-buffer))))
 
-(defun org-popnote-timestamp ()
-  "Return current timestamp."
-  ;; TODO: If there's an existing Org function that does this, use it; otherwise, propose upstream.
-  (with-temp-buffer
-    (insert (format-time-string org-popnote-timestamp-format))
-    (buffer-string)))
-
 (defun org-popnote-rebind-ret ()
   "Bind RET in current buffer to a special function in a copied keymap.
 The function renames the buffer to the first heading's name when
-point is on a heading, then call RET's previous definition."
+point is on a heading, then calls `org-popnote-goto-entry-end'."
   (let* ((map (copy-keymap (current-local-map)))
-         (orig-def (lookup-key map (kbd "RET") t)))
+         (orig-def (lookup-key map [return] t)))
     ;; Bind RET, only in this buffer, to rename the buffer to the heading.
-    (define-key map (kbd "RET")
+    (define-key map [return]
+      ;; TODO: Use apply-partial for this instead of a lambda.
       `(lambda ()
-         ,(format "With point on a heading, rename buffer accordingly.  Then call %s." orig-def)
+         ,(format "With point on a heading, rename buffer accordingly, then call `org-popnote-goto-entry-end'.  Otherwise, call %s." orig-def)
          (interactive)
-         (when (save-excursion
-                 (beginning-of-line)
-                 (org-at-heading-p))
-           (org-popnote-rename-buffer))
-         (funcall #',orig-def)))
+         (if (save-excursion
+               (beginning-of-line)
+               (org-at-heading-p))
+             (progn
+               (org-popnote-rename-buffer)
+               (org-popnote-goto-entry-end))
+           (funcall #',orig-def))))
     (use-local-map map)))
+
+(defun org-popnote-goto-entry-end ()
+  "Move point to end of entry content."
+  (goto-char (org-entry-end-position))
+  (when (re-search-backward (rx (not space)) (org-entry-beginning-position) t)
+    (end-of-line)))
 
 (defun org-popnote-rename-buffer ()
   "Rename current buffer based on first heading in buffer."
