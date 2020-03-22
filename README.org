@@ -1,10 +1,10 @@
-#+TITLE: org-popnote
+#+TITLE: org-notepad
 
 #+PROPERTY: LOGGING nil
 
 # Note: This readme works with the org-make-toc <https://github.com/alphapapa/org-make-toc> package, which automatically updates the table of contents.
 
-# [[https://melpa.org/#/package-name][file:https://melpa.org/packages/org-popnote-badge.svg]] [[https://stable.melpa.org/#/package-name][file:https://stable.melpa.org/packages/org-popnote-badge.svg]]
+# [[https://melpa.org/#/package-name][file:https://melpa.org/packages/org-notepad-badge.svg]] [[https://stable.melpa.org/#/package-name][file:https://stable.melpa.org/packages/org-notepad-badge.svg]]
 
 This package makes it easy to quickly take a note in a new heading displayed in a new indirect buffer.  It's similar to Org's built-in capture functionality, but it's not limited to one capture "session", so you can pop up a new note at any time, without interfering with other activities in Emacs.
 
@@ -41,8 +41,8 @@ Installing with [[https://framagit.org/steckerhalter/quelpa][Quelpa]] is easy:
 2.  Add this form to your init file:
 
 #+BEGIN_SRC elisp
-  (use-package org-popnote
-    :quelpa (org-popnote :fetcher github :repo "alphapapa/org-popnote"))
+  (use-package org-notepad
+    :quelpa (org-notepad :fetcher github :repo "alphapapa/org-notepad"))
 #+END_SRC
 
 * Usage
@@ -50,27 +50,53 @@ Installing with [[https://framagit.org/steckerhalter/quelpa][Quelpa]] is easy:
 :TOC:      0
 :END:
 
-1.  Run =M-x customize-group RET org-popnote RET= and configure the options =org-popnote-file= and =org-popnote-outline-path= according to your preferences.
-2.  =M-x org-popnote RET= to pop up a new note.
+1.  Run =M-x customize-group RET org-notepad RET= and configure the options =org-notepad-file= and =org-notepad-outline-path= according to your preferences.
+2.  =M-x org-notepad RET= to pop up a new note.
 
 ** Yequake
 
-Yequake makes it easy to display =org-popnote= in a new Emacs frame.  Here's an example configuration:
+Yequake makes it easy to display =org-notepad= in a new Emacs frame.  Here's an example configuration:
 
 #+BEGIN_SRC elisp
   (use-package yequake
     :custom
     (yequake-frames
-     (list (cons "org-popnote"
-                 (list (cons 'buffer-fns '(org-popnote))
+     (list (cons "org-notepad"
+                 (list (cons 'buffer-fns '(org-notepad))
                        (cons 'width 0.25)
                        (cons 'height 0.5))))))
 #+END_SRC
 
-Then bind a global keyboard shortcut in your desktop environment to run this command, which pops up a new Emacs frame showing a new =org-popnote= buffer:
+Then bind a global keyboard shortcut in your desktop environment to run this command, which pops up a new Emacs frame showing a new =org-notepad= buffer:
 
 #+BEGIN_SRC sh
-  emacsclient -n -e '(yequake-toggle "org-popnote")'
+  emacsclient -n -e '(yequake-toggle "org-notepad")'
+#+END_SRC
+
+This configuration uses [[https://github.com/alphapapa/org-sidebar][org-sidebar]] to display a list of =org-notepad= notes, organized by month and year, next to the new-note buffer:
+
+#+BEGIN_SRC elisp
+  (use-package yequake
+    :custom
+    (yequake-frames
+     '(("org-notepad"
+        (buffer-fns (lambda ()
+                      (find-file-noselect org-notepad-file))
+                    (lambda ()
+                      (org-with-wide-buffer
+                       (org-global-cycle '(4))
+                       (goto-char (org-find-olp '("Notes") 'this-buffer))
+                       (org-cycle)
+                       (org-tree-to-indirect-buffer)
+                       (let ((org-super-agenda-date-format "%Y %B"))
+                         (org-sidebar-ql (current-buffer)
+                                         '(regexp ".")
+                                         :narrow t :sort 'date
+                                         :super-groups '((:auto-ts))))
+                       (goto-char (org-end-of-subtree))))
+                    org-notepad)
+        (width . 0.25)
+        (height . 0.5)))))
 #+END_SRC
 
 * Changelog
