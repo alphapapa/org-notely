@@ -141,7 +141,7 @@ Like `org-tree-to-indirect-buffer', but does what we need."
 The function renames the buffer to the first heading's name when
 point is on a heading, then calls `org-notepad-goto-entry-end'."
   (let* ((map (copy-keymap (current-local-map)))
-         (orig-def (lookup-key map [return] t))
+         (orig-def (lookup-key map (kbd "RET") t))
          (docstring (format "With point on a heading, rename buffer accordingly, then call `org-notepad-goto-entry-end'.
 Otherwise, call %s."
                             orig-def))
