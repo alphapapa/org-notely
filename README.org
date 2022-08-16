@@ -1,10 +1,10 @@
-#+TITLE: org-notepad
+#+TITLE: org-notely
 
 #+PROPERTY: LOGGING nil
 
 # Note: This readme works with the org-make-toc <https://github.com/alphapapa/org-make-toc> package, which automatically updates the table of contents.
 
-# [[https://melpa.org/#/package-name][file:https://melpa.org/packages/org-notepad-badge.svg]] [[https://stable.melpa.org/#/package-name][file:https://stable.melpa.org/packages/org-notepad-badge.svg]]
+# [[https://melpa.org/#/package-name][file:https://melpa.org/packages/org-notely-badge.svg]] [[https://stable.melpa.org/#/package-name][file:https://stable.melpa.org/packages/org-notely-badge.svg]]
 
 This package makes it easy to quickly take a note in a new heading displayed in a new indirect buffer.  It's similar to Org's built-in capture functionality, but it's not limited to one capture "session", so you can pop up a new note at any time, without interfering with other activities in Emacs.
 
@@ -41,8 +41,8 @@ Installing with [[https://framagit.org/steckerhalter/quelpa][Quelpa]] is easy:
 2.  Add this form to your init file:
 
 #+BEGIN_SRC elisp
-  (use-package org-notepad
-    :quelpa (org-notepad :fetcher github :repo "alphapapa/org-notepad"))
+  (use-package org-notely
+    :quelpa (org-notely :fetcher github :repo "alphapapa/org-notely"))
 #+END_SRC
 
 * Usage
@@ -50,38 +50,38 @@ Installing with [[https://framagit.org/steckerhalter/quelpa][Quelpa]] is easy:
 :TOC:      0
 :END:
 
-1.  Run =M-x customize-group RET org-notepad RET= and configure the options =org-notepad-file= and =org-notepad-outline-path= according to your preferences.
-2.  =M-x org-notepad RET= to pop up a new note.
+1.  Run =M-x customize-group RET org-notely RET= and configure the options =org-notely-file= and =org-notely-outline-path= according to your preferences.
+2.  =M-x org-notely RET= to pop up a new note.
 
 ** Yequake
 
-Yequake makes it easy to display =org-notepad= in a new Emacs frame.  Here's an example configuration:
+Yequake makes it easy to display =org-notely= in a new Emacs frame.  Here's an example configuration:
 
 #+BEGIN_SRC elisp
   (use-package yequake
     :custom
     (yequake-frames
-     (list (cons "org-notepad"
-                 (list (cons 'buffer-fns '(org-notepad))
+     (list (cons "org-notely"
+                 (list (cons 'buffer-fns '(org-notely))
                        (cons 'width 0.25)
                        (cons 'height 0.5))))))
 #+END_SRC
 
-Then bind a global keyboard shortcut in your desktop environment to run this command, which pops up a new Emacs frame showing a new =org-notepad= buffer:
+Then bind a global keyboard shortcut in your desktop environment to run this command, which pops up a new Emacs frame showing a new =org-notely= buffer:
 
 #+BEGIN_SRC sh
-  emacsclient -n -e '(yequake-toggle "org-notepad")'
+  emacsclient -n -e '(yequake-toggle "org-notely")'
 #+END_SRC
 
-This configuration uses [[https://github.com/alphapapa/org-sidebar][org-sidebar]] to display a list of =org-notepad= notes, organized by month and year, next to the new-note buffer:
+This configuration uses [[https://github.com/alphapapa/org-sidebar][org-sidebar]] to display a list of =org-notely= notes, organized by month and year, next to the new-note buffer:
 
 #+BEGIN_SRC elisp
   (use-package yequake
     :custom
     (yequake-frames
-     '(("org-notepad"
+     '(("org-notely"
         (buffer-fns (lambda ()
-                      (find-file-noselect org-notepad-file))
+                      (find-file-noselect org-notely-file))
                     (lambda ()
                       (org-with-wide-buffer
                        (org-global-cycle '(4))
@@ -94,7 +94,7 @@ This configuration uses [[https://github.com/alphapapa/org-sidebar][org-sidebar]
                                          :narrow t :sort 'date
                                          :super-groups '((:auto-ts))))
                        (goto-char (org-end-of-subtree))))
-                    org-notepad)
+                    org-notely)
         (width . 0.25)
         (height . 0.5)))))
 #+END_SRC

@@ -1,9 +1,9 @@
-;;; org-notepad.el --- Pop to new Org headings for quick notetaking  -*- lexical-binding: t; -*-
+;;; org-notely.el --- Pop to new Org headings for quick notetaking  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2020  Adam Porter
 
 ;; Author: Adam Porter <adam@alphapapa.net>
-;; Url: https://github.com/alphapapa/org-notepad
+;; Url: https://github.com/alphapapa/org-notely
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "26.1") (org "9.0"))
 ;; Keywords: convenience, outlines
@@ -32,7 +32,7 @@
 ;; interfering with other activities in Emacs.
 
 ;; This is especially useful with `yequake' because, since
-;; `org-notepad' returns a buffer, it can be used in the `yequake'
+;; `org-notely' returns a buffer, it can be used in the `yequake'
 ;; `buffer-fns'.  So with one, globally bound keystroke, a new Emacs
 ;; frame appears showing a new, empty Org heading, timestamped with
 ;; the current time, ready for taking notes.  See
@@ -40,9 +40,14 @@
 
 ;; [2020-01-29 Wed 18:18] Renaming to org-notepad because I want to
 ;; expand its scope slightly beyond just popping up a new note.  I
-;; want it to pop up a "notepad"-like window with a new, empty
-;; heading, but also showing existing notes for easy access.  I'm just
+;; want it to pop up a "notely"-like window with a new, empty heading,
+;; but also showing existing notes for easy access.  I'm just
 ;; experimenting for now.
+
+;; [2022-08-15 Mon 19:17] Renaming to org-notely, because org-notepad
+;; doesn't seem distinctive enough (and according to my "market
+;; research," can have some negative connotations, reminding users of
+;; notepad.exe).
 
 ;;; Code:
 
@@ -55,21 +60,21 @@
 
 ;;;; Customization
 
-(defgroup org-notepad nil
-  "Options for `org-notepad'."
+(defgroup org-notely nil
+  "Options for `org-notely'."
   :group 'org
-  :link '(url-link "https://github.com/alphapapa/org-notepad"))
+  :link '(url-link "https://github.com/alphapapa/org-notely"))
 
-(defcustom org-notepad-file "~/org/temp.org"
+(defcustom org-notely-file "~/org/temp.org"
   "File to put new notes in."
   :type '(file :must-match t))
 
-(defcustom org-notepad-outline-path '("Notes")
+(defcustom org-notely-outline-path '("Notes")
   "Outline path where new notes are created."
   :type '(repeat string))
 
-(defcustom org-notepad-new-note-hook
-  '(org-notepad-rebind-ret org-notepad-new-note-timestamp)
+(defcustom org-notely-new-note-hook
+  '(org-notely-rebind-ret org-notely-new-note-timestamp)
   "Hook called when new note is created.
 Called with point on the new heading.  Each hook function should
 return with point in the same place, unless its purpose is to
@@ -79,8 +84,8 @@ move point."
 ;;;; Commands
 
 ;;;###autoload
-(defun org-notepad ()
-  "Return buffer showing the `org-notepad' heading with a new, empty note.
+(defun org-notely ()
+  "Return buffer showing the `org-notely' heading with a new, empty note.
 Return indirect buffer.  In the indirect buffer, \"RET\" is bound
 to a function which renames the buffer to the first heading when
 point is on a heading."
@@ -91,9 +96,9 @@ point is on a heading."
   ;; that.  This is way harder than it should be.  But this works well enough for now.
   (interactive)
   ;; NOTE: We do not use `with-current-buffer' around the whole function.  Trust me.
-  (switch-to-buffer (or (get-file-buffer org-notepad-file)
-			(find-file-noselect org-notepad-file)))
-  (pcase-let* ((parent-marker (org-find-olp org-notepad-outline-path 'this-buffer)))
+  (switch-to-buffer (or (get-file-buffer org-notely-file)
+			(find-file-noselect org-notely-file)))
+  (pcase-let* ((parent-marker (org-find-olp org-notely-outline-path 'this-buffer)))
     (goto-char parent-marker)
     (if (save-excursion
           (goto-char (org-end-of-subtree))
@@ -107,22 +112,22 @@ point is on a heading."
       ;; Last heading is empty: go to it.
       (goto-char (org-end-of-subtree))
       (outline-back-to-heading))
-    (switch-to-buffer (org-notepad-tree-indirect-buffer))
-    (run-hooks 'org-notepad-new-note-hook)
+    (switch-to-buffer (org-notely-tree-indirect-buffer))
+    (run-hooks 'org-notely-new-note-hook)
     (current-buffer)))
 
 ;;;; Functions
 
-(defun org-notepad-new-note-timestamp ()
+(defun org-notely-new-note-timestamp ()
   "Insert timestamp and leave point in heading.
-For `org-notepad-new-note-hook'."
+For `org-notely-new-note-hook'."
   (end-of-line)
   (save-excursion
     (insert "\n\n")
     (org-insert-time-stamp (current-time) 'with-hm 'inactive)
     (insert "  ")))
 
-(defun org-notepad-tree-indirect-buffer ()
+(defun org-notely-tree-indirect-buffer ()
   "Return an indirect buffer narrowed to current subtree.
 Like `org-tree-to-indirect-buffer', but does what we need."
   (let* ((pos (point))
@@ -136,13 +141,13 @@ Like `org-tree-to-indirect-buffer', but does what we need."
       (org-narrow-to-subtree)
       (current-buffer))))
 
-(defun org-notepad-rebind-ret ()
+(defun org-notely-rebind-ret ()
   "Bind RET in current buffer to a special function in a copied keymap.
 The function renames the buffer to the first heading's name when
-point is on a heading, then calls `org-notepad-goto-entry-end'."
+point is on a heading, then calls `org-notely-goto-entry-end'."
   (let* ((map (copy-keymap (current-local-map)))
          (orig-def (lookup-key map (kbd "RET") t))
-         (docstring (format "With point on a heading, rename buffer accordingly, then call `org-notepad-goto-entry-end'.
+         (docstring (format "With point on a heading, rename buffer accordingly, then call `org-notely-goto-entry-end'.
 Otherwise, call %s."
                             orig-def))
          (fn `(lambda ()
@@ -152,19 +157,19 @@ Otherwise, call %s."
                       (beginning-of-line)
                       (org-at-heading-p))
                     (progn
-                      (org-notepad-rename-buffer)
-                      (org-notepad-goto-entry-end))
+                      (org-notely-rename-buffer)
+                      (org-notely-goto-entry-end))
                   (funcall #',orig-def)))))
     (define-key map (kbd "RET") fn)
     (use-local-map map)))
 
-(defun org-notepad-goto-entry-end ()
+(defun org-notely-goto-entry-end ()
   "Move point to end of entry content."
   (goto-char (org-entry-end-position))
   (when (re-search-backward (rx (not space)) (org-entry-beginning-position) t)
     (end-of-line)))
 
-(defun org-notepad-rename-buffer ()
+(defun org-notely-rename-buffer ()
   "Rename current buffer based on first heading in buffer."
   (interactive)
   (save-excursion
@@ -178,6 +183,6 @@ Otherwise, call %s."
 
 ;;;; Footer
 
-(provide 'org-notepad)
+(provide 'org-notely)
 
-;;; org-notepad.el ends here
+;;; org-notely.el ends here
