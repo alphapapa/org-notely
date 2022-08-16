@@ -96,8 +96,8 @@ point is on a heading."
   ;; that.  This is way harder than it should be.  But this works well enough for now.
   (interactive)
   ;; NOTE: We do not use `with-current-buffer' around the whole function.  Trust me.
-  (switch-to-buffer (or (get-file-buffer org-notely-file)
-			(find-file-noselect org-notely-file)))
+  (set-buffer (or (get-file-buffer org-notely-file)
+	          (find-file-noselect org-notely-file)))
   (pcase-let* ((parent-marker (org-find-olp org-notely-outline-path 'this-buffer)))
     (goto-char parent-marker)
     (if (save-excursion
@@ -112,9 +112,10 @@ point is on a heading."
       ;; Last heading is empty: go to it.
       (goto-char (org-end-of-subtree))
       (outline-back-to-heading))
-    (switch-to-buffer (org-notely-tree-indirect-buffer))
+    (bury-buffer (current-buffer))
+    (set-buffer (org-notely-tree-indirect-buffer))
     (run-hooks 'org-notely-new-note-hook)
-    (current-buffer)))
+    (switch-to-buffer (current-buffer))))
 
 ;;;; Functions
 
