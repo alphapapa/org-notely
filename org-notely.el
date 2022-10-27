@@ -84,38 +84,52 @@ move point."
 ;;;; Commands
 
 ;;;###autoload
-(defun org-notely ()
-  "Return buffer showing the `org-notely' heading with a new, empty note.
-Return indirect buffer.  In the indirect buffer, \"RET\" is bound
-to a function which renames the buffer to the first heading when
-point is on a heading."
+(cl-defun org-notely (&optional parent-marker &key (bury t))
+  "Insert a new subheading at PARENT-MARKER and show it in an indirect buffer.
+Returns the indirect buffer.  In the indirect buffer, \"RET\" is
+bound to a function which renames the buffer to the first
+heading's name when point is on a heading.  When BURY, the parent
+buffer is buried.
+
+Interactively, PARENT-MARKER is set according to
+`org-notely-file' and `org-notely-outline-path', which see."
   ;; FIXME: If two notes are made in the same clock minute, they're both shown in the indirect
   ;; buffer, because the name of the buffer is computed to be the same, because the first
   ;; time, the buffer name is computed to be just the timestamp and filename, and the second
   ;; time it's computed the same, even if the heading was modified before.  Or something like
   ;; that.  This is way harder than it should be.  But this works well enough for now.
-  (interactive)
+  (interactive
+   (progn
+     (set-buffer (or (get-file-buffer org-notely-file)
+	             (find-file-noselect org-notely-file)))
+     (list (org-find-olp org-notely-outline-path 'this-buffer))))
   ;; NOTE: We do not use `with-current-buffer' around the whole function.  Trust me.
-  (set-buffer (or (get-file-buffer org-notely-file)
-	          (find-file-noselect org-notely-file)))
-  (pcase-let* ((parent-marker (org-find-olp org-notely-outline-path 'this-buffer)))
-    (goto-char parent-marker)
-    (if (save-excursion
-          (goto-char (org-end-of-subtree))
-          (outline-back-to-heading)
-          (nth 4 (org-heading-components)))
-        (progn
-          ;; Last heading is non-empty: insert a new heading.
-          (org-insert-heading-respect-content)
-          ;; TODO: Ensure the region is deactivated before demotion.
-          (org-do-demote))
-      ;; Last heading is empty: go to it.
-      (goto-char (org-end-of-subtree))
-      (outline-back-to-heading))
-    (bury-buffer (current-buffer))
-    (set-buffer (org-notely-tree-indirect-buffer))
-    (run-hooks 'org-notely-new-note-hook)
-    (switch-to-buffer (current-buffer))))
+  (goto-char parent-marker)
+  (if (save-excursion
+        (goto-char (org-end-of-subtree))
+        (outline-back-to-heading)
+        (nth 4 (org-heading-components)))
+      (progn
+        ;; Last heading is non-empty: insert a new heading.
+        (org-insert-heading-respect-content)
+        ;; TODO: Ensure the region is deactivated before demotion.
+        (org-do-demote))
+    ;; Last heading is empty: go to it.
+    (goto-char (org-end-of-subtree))
+    (outline-back-to-heading))
+  (when bury
+    (bury-buffer (current-buffer)))
+  (set-buffer (org-notely-tree-indirect-buffer))
+  (run-hooks 'org-notely-new-note-hook)
+  (switch-to-buffer (current-buffer)))
+
+;;;###autoload
+(cl-defun org-notely-here ()
+  "Make a new heading at point and show it in an indirect buffer."
+  (interactive)
+  (org-notely (save-excursion
+                (org-back-to-heading)
+                (point-marker))))
 
 ;;;; Functions
 
