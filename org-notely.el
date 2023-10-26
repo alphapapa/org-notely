@@ -125,6 +125,7 @@ Interactively, PARENT-MARKER is set according to
 
 ;;;###autoload
 (cl-defun org-notely-here ()
+  ;; TODO: Integrate with Embark properly.  See <https://github.com/oantolin/embark/issues/670#issuecomment-1749887910>.
   "Make a new heading at point and show it in an indirect buffer."
   (interactive)
   (org-notely (save-excursion
