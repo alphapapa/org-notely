@@ -139,7 +139,7 @@ Interactively, PARENT-MARKER is set according to
 For `org-notely-new-note-hook'."
   (end-of-line)
   (save-excursion
-    (insert "\n\n")
+    (insert "\n\n+ ")
     (org-insert-time-stamp (current-time) 'with-hm 'inactive)
     (insert "  ")))
 
